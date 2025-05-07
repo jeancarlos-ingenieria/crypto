@@ -1,29 +1,34 @@
 import requests
+from dotenv import load_dotenv
+import os
 
-BASE_URL = "https://api.coingecko/api/v3"
+# Cargar la API Key desde el archivo .env
+load_dotenv()
+API_KEY = os.getenv("COINMARKETCAP_API_KEY")
+
+BASE_URL = "https://pro-api.coinmarketcap.com/v1"
+
+headers = {
+    "Accepts": "application/json",
+    "X-CMC_PRO_API_KEY": API_KEY,
+}
 
 
-def get_price(coin_id, vs_currency="usd"):
-    url = f"${BASE_URL}/simple/price"
-    params = {
-        "ids": coin_id,
-        "vs_currencies": vs_currency,
-        "include_24hr_change": "true",
-    }
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    return response.json()
+# Función para obtener el precio de la criptomoneda
+def get_crypto_price(crypto, vs_currency="usd"):
+    """
+    Get the current price of a cryptocurrency in the given currency.
+    """
+    # Validar moneda de comparación
+    valid_currencies = ["usd", "eur", "gbp", "ars", "btc", "eth", "jpy", "cny"]
+    if vs_currency.lower() not in valid_currencies:
+        raise ValueError(
+            f"Invalid currency: {vs_currency}. Supported currencies: {', '.join(valid_currencies)}"
+        )
 
+    url = f"{BASE_URL}/cryptocurrency/quotes/latest"
+    params = {"symbol": crypto.upper(), "convert": vs_currency.upper()}
 
-def get_top_coins(limit=10, vs_currency="usd"):
-    url = f"{BASE_URL}/coins/markets"
-    params = {
-        "vs_currency": vs_currency,
-        "order": "market_cap_desc",
-        "per_page": limit,
-        "page": 1,
-        "sparkline": False,
-    }
-    response = requests.get(url, params=params)
-    response.raise_for_status()
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()  # Esto lanzará un error si la respuesta no es 200 OK
     return response.json()
